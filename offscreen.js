@@ -10,11 +10,27 @@ let c2pa;
 let c2paIsLoading = false;
 const manifestMap = {};
 
+// Trust anchors: the C2PA conformance list plus Trusteddit's own Root CA +
+// Journalist-Issuer intermediate, so trusteddit-signed content and
+// tsa.trusteddit.com timestamps verify as trusted. Bundled at trust/.
+async function loadTrustAnchors() {
+  try {
+    const res = await fetch(chrome.runtime.getURL('trust/c2pa-trust-list.pem'));
+    if (res.ok) return await res.text();
+    debug('[c2pa] trust list fetch failed:', res.status);
+  } catch (e) {
+    debug('[c2pa] trust list load error:', e);
+  }
+  return undefined; // fall back to no-trust read rather than break verification
+}
+
 async function initializeC2pa() {
   if (!c2paIsLoading) {
+    const trustAnchors = await loadTrustAnchors();
     c2pa = await createC2pa({
       wasmSrc: './c2pa/packages/c2pa/dist/assets/wasm/toolkit_bg.wasm',
       workerSrc: './c2pa/packages/c2pa/dist/c2pa.worker.min.js',
+      ...(trustAnchors ? { trust: { trustAnchors, verifyTrust: true } } : {}),
     });
     c2paIsLoading = true;
   }
