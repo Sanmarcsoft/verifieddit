@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "C2PA Content Credentials",
-    "version": "0.0.8",
-    "description": "Verify and display manifests for images, audio and videos embedding C2PA Content Credentials.",
+    "name": "Verifieddit Extension",
+    "version": "0.1.0",
+    "description": "Verify C2PA Content Credentials and durable provenance on images, audio and video, with Trusteddit trust anchors.",
     "icons": {
         "16": "images/icons/icon.png",
         "32": "images/icons/icon.png",
