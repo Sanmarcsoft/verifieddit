@@ -19,6 +19,7 @@ cp -r ./c2pa/packages/c2pa/dist ./build/c2pa/packages/c2pa/dist
 cp -r ./c2pa/packages/c2pa-wc/dist ./build/c2pa/packages/c2pa-wc/dist
 cp -r ./images ./build/images
 cp -r ./lib ./build/lib
+cp -r ./trust ./build/trust
 cp -r ./node_modules ./build/node_modules
 
 # Override the content of ./build/lib/log.js

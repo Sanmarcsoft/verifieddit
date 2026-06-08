@@ -4,6 +4,7 @@
 import { createC2pa, createL2ManifestStore, generateVerifyUrl } from './c2pa/packages/c2pa/dist/c2pa.esm.js';
 import { EVENT_TYPE_C2PA_MANIFEST, EVENT_TYPE_C2PA_MANIFEST_RESPONSE } from './config.js';
 import { convertDataURLtoBlob, isImageAccessible } from './lib/imageUtils.js';
+import { detectDurablePillars } from './lib/durablePillars.js';
 import debug from './lib/log.js';
 
 let c2pa;
@@ -50,9 +51,19 @@ const validateC2pa = async (image, imageId) => {
 
   const { manifestStore: l2ManifestStore } = await createL2ManifestStore(manifestStore);
 
+  // Durable-credentials pillars are read from the FULL manifest store (the L2
+  // summary drops the soft_binding assertion). Defensive: never block the read.
+  let pillars;
+  try {
+    pillars = detectDurablePillars(manifestStore.activeManifest);
+  } catch (e) {
+    debug('[c2pa] pillar detection failed:', e);
+  }
+
   return {
     manifest: l2ManifestStore,
     validationStatus: manifestStore.validationStatus,
+    pillars,
   };
 };
 
@@ -64,9 +75,16 @@ const handleC2PAManifestMessage = async (event) => {
 
     if (manifestMap[imageId]) {
       // todo: validationStatus in this case as well?
+      let cachedPillars;
+      try {
+        cachedPillars = detectDurablePillars(manifestMap[imageId].activeManifest);
+      } catch (e) {
+        debug('[c2pa] cached pillar detection failed:', e);
+      }
       return ({
         type: EVENT_TYPE_C2PA_MANIFEST_RESPONSE,
         manifest: manifestMap[imageId],
+        pillars: cachedPillars,
         imageId,
       });
     }
@@ -81,6 +99,7 @@ const handleC2PAManifestMessage = async (event) => {
       type: EVENT_TYPE_C2PA_MANIFEST_RESPONSE,
       manifest: result.manifest,
       validationStatus: result.validationStatus,
+      pillars: result.pillars,
       imageId,
       viewMoreUrl: generateVerifyUrl(typeof image === 'string' ? image : image.src),
     });
